@@ -1,0 +1,136 @@
+html, body {
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    background-image: radial-gradient(circle at 50% 31%, rgba(255,255,255,1) 0%, rgba(127,255,255,1) 25%, rgba(127,200,255,1) 50%, rgba(0,127,255,1) 100%);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: auto;
+    height: 100vh;
+    width: 100vw;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 900;
+    font-size: 1.5em;
+    user-select: none;
+    color: black;
+    overflow: hidden;
+}
+
+.main {
+    width: 100%;
+    height: 100%;
+}
+
+.player-stats {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 50px;
+    display: grid;
+    grid-template-columns: auto 400px auto;
+}
+
+.player-stats-inner {
+    display: grid;
+    grid-template-columns: auto 350px;
+    gap: 10px;
+    z-index: 420;
+    background-image: radial-gradient(circle at 50% -50%, rgba(0,255,127,0.6) -50%, rgba(0,255,127,0.4) -25%, transparent 100%);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: auto;
+}
+
+.player-hp-inv {
+    display: grid;
+    grid-template-rows: 10px auto;
+    gap: 10px;
+    font-size: 0.5em;
+}
+
+#player-name {
+    font-size: 0.5em;
+}
+
+.hp-bar {
+    width: 100%;
+    height: 10px;
+    border: 1px solid black;
+    border-radius: 5px;
+}
+
+.control-box {
+    width: 500px;
+    height: 350px;
+    position: absolute;
+    z-index: 69;
+    top: calc(50% - 125px);
+    left: calc(50% - 250px);
+    background-image: radial-gradient(circle at 50% 50%, rgba(0,255,127,0.4) 0%, rgba(0,255,127,0.2) 25%, transparent 100%);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: auto;
+}
+
+.title {
+    font-size: 1em;
+}
+
+.subtitle {
+    font-size: 0.6em;
+}
+
+.center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.button {
+    margin: 10px;
+    width: 200px;
+    border: 1px solid rgba(0,127,127,1);
+    border-radius: 10px;
+}
+
+.button:hover {
+    border: 2px solid rgba(0,127,127,1);
+    color: whitesmoke;
+    cursor: pointer;
+}
+
+.slidecontainer {
+    margin: 10px;
+    width: 200px;
+    font-size: 0.69em;
+}
+  
+.slider {
+    appearance: none;
+    width: 100%;
+    height: 5px;
+    border-radius: 5px;
+    background: whitesmoke;
+    outline: none;
+    opacity: 0.7;
+    transition: opacity .2s;
+}
+  
+.slider:hover {
+    opacity: 1;
+}
+
+.slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 10px;
+    height: 25px;
+    border-radius: 3px;
+    background: rgba(0,127,127,1);
+    cursor: pointer;
+    box-shadow: 1px 1px 3px black;
+}
+
+::-webkit-scrollbar {
+    display: none;
+}

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Zombie Shooter</title>
+    <link rel="stylesheet" href="./style.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;700&display=swap');
+    </style>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <div class="player-stats" id="player-stats">
+        <div></div>
+        <div class="player-stats-inner">
+            <div id="player-name">test</div>
+            <div class="player-hp-inv">
+                <div class="hp-bar" id="player-hp"></div>
+                <div>
+                    <span id="player-weapon"></span>
+                    <span>Ammo: </span><span id="player-ammo"></span>
+                    <span>Kills: </span><span id="player-kills"></span>
+                </div>
+            </div>
+        </div>
+        <div></div>
+    </div>
+    <div class="main" id="play-area">
+    </div>
+    <div class="control-box" id="control-box">
+        <div>
+            <span class="title">Welcome to the game!</span><br>
+            <span class="subtitle">
+                WASD - move;<br>
+                Mouse - look;<br>
+                LMB - shoot;<br>
+                Q - switch weapon
+            </span>
+        </div>
+        <div class="center">
+            <div class="button" onclick="start();" id="actions-start">start</div>
+        </div>
+    </div>
+    <script src="./code.js"></script>
+</body>
+</html>
