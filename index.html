@@ -25,6 +25,7 @@
         <div></div>
     </div>
     <div class="main" id="play-area">
+        <canvas id="play-area-graphics"></canvas>
     </div>
     <div class="control-box" id="control-box">
         <div>
@@ -33,13 +34,15 @@
                 WASD - move;<br>
                 Mouse - look;<br>
                 LMB - shoot;<br>
-                Q - switch weapon
+                Q - switch weapon<br>
+                P - pause
             </span>
         </div>
         <div class="center">
             <div class="button" onclick="start();" id="actions-start">start</div>
         </div>
     </div>
+    <div id="player-log"></div>
     <script src="./code.js"></script>
 </body>
 </html>

@@ -1,6 +1,15 @@
 const game_start_window = document.getElementById("control-box");
 const player_stats = document.getElementById("player-stats");
+const player_log = document.getElementById("player-log");
 const play_area = document.getElementById("play-area");
+const play_area_canvas = document.getElementById("play-area-graphics");
+const play_area_graphics = play_area_canvas.getContext("2d");
+//graphics arrays
+const blood = [
+    ["./data/blood/big_0.png", "./data/blood/big_1.png", "./data/blood/big_2.png"], //big ~45x45
+    ["./data/blood/med_0.png", "./data/blood/med_1.png", "./data/blood/med_2.png"], //medium ~25x25
+    ["./data/blood/small_0.png", "./data/blood/small_1.png"] // small ~15x15
+];
 const player_name = document.getElementById("player-name");
 const player_hp = document.getElementById("player-hp");
 const player_wp = document.getElementById("player-weapon");
@@ -11,7 +20,6 @@ const move_speed = 9;
 var game_paused = true;
 var game_started = false;
 const game_tick = 1000 / 60; //game logic updates at 60fps
-const enemy_spawn_rate = 60; //ms timing = tick * spawn_rate
 const enemy_move_speed = 5;
 const enemy_damage = 10;
 const enemy_damage_rate = 60;
@@ -23,7 +31,6 @@ const ar_bullet_speed = 40;
 const ar_bullet_damage = 10;
 var projectiles = [];
 var enemies = [];
-const item_spawn_rate = 300;
 const item_health_value = 30;
 var items = [];
 var player = {
@@ -96,24 +103,9 @@ var player = {
         displayPlayerHP();
         if (this.hp <= 0) {
             //game end
-            game_paused = true;
-            game_started = false;
-            alert("lol you died\nkills: " + this.kills);
-            this.model.remove();
-            for (var i = 0; i < projectiles.length; i++) {
-                projectiles[i].model.remove();
-            }
-            projectiles = [];
-            for (var i = 0; i < enemies.length; i++) {
-                enemies[i].model.remove();
-            }
-            enemies = [];
-            for (var i = 0; i < items.length; i++) {
-                items[i].model.remove();
-            }
-            items = [];
-            displayPreStartElems();
+            gameEnd();
         }
+        this.setLog("OUCH");
     },
     receiveItem: function(item) {
         switch(item) {
@@ -121,6 +113,7 @@ var player = {
                 this.inv.push(["AR", 100]);
                 this.inv_selected++;
                 displayPlayerWeapon();
+                this.setLog("AR!");
                 break;
             case "Ammo":
                 switch (this.inv[this.inv_selected][0]) {
@@ -134,6 +127,7 @@ var player = {
                         break;
                 }
                 displayPlayerAmmo();
+                this.setLog("+AMMO!");
                 break;
             case "Health":
                 this.hp += item_health_value;
@@ -141,14 +135,28 @@ var player = {
                     this.maxhp == this.hp;
                 }
                 displayPlayerHP();
+                this.setLog("+HP!");
                 break;
             default:
                 break;
         }
+    },
+    log_opacity: 0,
+    setLog: function(text) {
+        player_log.textContent = text;
+        this.log_opacity = 1;
+        player_log.style.left = `${this.pos.x}px`;
+        player_log.style.top = `${this.pos.y}px`;
+    },
+    tickLog: function() {
+        player_log.style.opacity = this.log_opacity;
+        this.log_opacity = Math.max(0, this.log_opacity - 0.01);
     }
 };
 
 window.onload = function() {
+    play_area_canvas.width = play_area_canvas.clientWidth;
+    play_area_canvas.height = play_area_canvas.clientHeight;
     displayPreStartElems();
 }
 
@@ -158,7 +166,6 @@ window.onmousemove = function(e) {
     mouseY = e.clientY;
 }
 
-var items_to_spawn = ["AR", "Ammo", "Ammo", "Ammo", "Health"];
 function shuffle(array) {
     let currentIndex = array.length,  randomIndex;
     while (currentIndex != 0) {
@@ -245,6 +252,31 @@ function calculatePlayerHP() {
     return hp;
 }
 
+function gameEnd() {
+    game_paused = true;
+    game_started = false;
+    alert("lol you died\nkills: " + player.kills);
+    player.model.remove();
+    for (var i = 0; i < projectiles.length; i++) {
+        projectiles[i].model.remove();
+    }
+    projectiles = [];
+    for (var i = 0; i < enemies.length; i++) {
+        enemies[i].model.remove();
+    }
+    enemies = [];
+    for (var i = 0; i < items.length; i++) {
+        items[i].model.remove();
+    }
+    items = [];
+    play_area_graphics.clearRect(0, 0, play_area_canvas.width, play_area_canvas.height);
+    player_log.style.opacity = 0;
+    diff_stats = [0, 0, false, 0, 0, 0, 0];
+    keys_pressed = [false, false, false, false]
+    mouse_down = false;
+    displayPreStartElems();
+}
+
 function spawnPlayer() {
     player.pos.x = document.body.getBoundingClientRect().width / 2;
     player.pos.y = document.body.getBoundingClientRect().height / 2;
@@ -325,14 +357,14 @@ function getRandomName() {
 }
 
 async function gameTick() {
-    var enemy_timing = 0;
-    var item_timing = 0;
+    var ticks_passed = 0;
     while(game_started) {
         if(!game_paused) {
             //do game logic
             //handle player
             player.look();
             player.move();
+            player.tickLog();
             //handle projectiles
             var temp_proj = [];
             for (var i = 0; i < projectiles.length; i++) {
@@ -356,10 +388,7 @@ async function gameTick() {
                     for (var k = 0; k < damage_count.length; k++) {
                         damage += projectiles[damage_count[k]].damage;
                     }
-                    enemies[i].hp -= damage;
-                    if (enemies[i].hp <= 0) {
-                        is_alive = false;
-                    }
+                    is_alive = enemies[i].receiveDamage(damage);
                     //remove projectiles
                     var temp = [];
                     for (var k = 0; k < damage_count.length; k++) {
@@ -385,12 +414,6 @@ async function gameTick() {
                 }
             }
             enemies = temp_proj;
-            enemy_timing++;
-            if (enemy_timing == enemy_spawn_rate) {
-                //spawn new enemy
-                enemies.push(spawnNewEnemy());
-                enemy_timing = 0;
-            }
             //handle items
             temp_proj = [];
             for (var i = 0; i < items.length; i++) {
@@ -400,15 +423,83 @@ async function gameTick() {
                 }
             }
             items = temp_proj;
-            item_timing++;
-            if (item_timing == item_spawn_rate) {
-                //spawn new enemy
-                items.push(spawnNewItem());
-                item_timing = 0;
+            //handle timings of enemy spawns/item spawns/etc depending on difficulty
+            if (ticks_passed % 60 == 0) {
+                difficultyTimings(Math.floor(ticks_passed / 60));
             }
+            ticks_passed++;
         }
         await sleep(game_tick);
     }
+}
+
+    //difficulty levels:
+    //easy 0 - 10 sec:
+    //          1 enemy every second
+    //          no item spawn
+    //medium 11 - 30 sec:
+    //          immediate AR spawn
+    //          2 enemy every second
+    //          item spawn every 5 seconds (ammo, ammo, ammo, health)
+    //hard 31+ sec:
+    //          3 enemies per second
+    //          item spawn every 3 seconds (ammo, ammo, ammo, ammo, health)
+const difficulty = [
+    //enemies amount, enemy type (ar) {dor future compatibility}, item timing, item type (ar), special action
+    [1, [0], 99, ["Ammo"], false],
+    [2, [0], 5, ["Ammo", "Ammo", "Ammo", "Health"], true],
+    [3, [0], 3, ["Ammo", "Ammo", "Ammo", "Ammo", "Health"], false]
+];
+//previous difficulty, current difficulty, special action done, enemy array, item timing, item array
+var diff_stats = [0, 0, false, 0, 0, 0, 0];
+function difficultyTimings(timing) {
+    if (updateDifficultyLevel(timing)) {
+        //difficulty changed
+        diff_stats[0] = diff_stats[1];
+        diff_stats[2] = false;
+        diff_stats[3] = 0;
+        diff_stats[4] = 0;
+        diff_stats[5] = 0;
+        //check special action
+        if (difficulty[diff_stats[1]][4]) {
+            //do special action
+            switch (diff_stats[1]) {
+                case 1:
+                    //medium difficulty - AR spawn
+                    items.push(spawnNewItem("AR"));
+                    break;
+                default:
+                    break;
+            }
+            diff_stats[2] = true;
+        }
+    }
+    //do enemy spawn
+    for (var i = 0; i < difficulty[diff_stats[1]][0]; i++) {
+        enemies.push(spawnNewEnemy());
+    }
+    //do item spawn
+    if (diff_stats[4] == difficulty[diff_stats[1]][2]) {
+        items.push(spawnNewItem(difficulty[diff_stats[1]][3][diff_stats[5]]));
+        diff_stats[5]++;
+        if (diff_stats[5] >= difficulty[diff_stats[1]][3].length) {
+            diff_stats[5] = 0;
+        }
+        diff_stats[4] = 0;
+    } else {
+        diff_stats[4]++;
+    }
+}
+
+function updateDifficultyLevel(timing) {
+    if(timing <= 10) {
+        diff_stats[1] = 0;
+    } else if (timing <= 30) {
+        diff_stats[1] = 1;
+    } else {
+        diff_stats[1] = 2;
+    }
+    return diff_stats[1] != diff_stats[0];
 }
 
 function spawnNewEnemy() {
@@ -488,20 +579,32 @@ function spawnNewEnemy() {
                 this.damage_rate = 0;
                 player.takeDamage(this.damage);
             }
+        },
+        receiveDamage: function(damage) {
+            is_alive = true;
+            this.hp -= damage;
+            if (this.hp <= 0) {
+                //dead
+                is_alive = false;
+                drawBlood(this.pos.x, this.pos.y, 0);
+            } else {
+                //damaged
+                drawBlood(this.pos.x, this.pos.y, 1);
+                if(this.hp >= 15) {
+                    this.model.style.backgroundImage = "url(./data/enemies/zombie_half.png)";
+                } else {
+                    this.model.style.backgroundImage = "url(./data/enemies/zombie_min.png)";
+                }
+            }
+            return is_alive;
         }
     };
     return enemy;
 }
 
-function spawnNewItem() {
+function spawnNewItem(type) {
     var x1 = Math.random() * (document.body.getBoundingClientRect().width - 100) + 100;
     var y1 = Math.random() * (document.body.getBoundingClientRect().height - 100) + 100;
-    items_to_spawn = shuffle(items_to_spawn);
-    var type = items_to_spawn[0];
-    //checks if player has item
-    if (type == "AR" && player.inv.length > 1) {
-        type = "Ammo";
-    }
     var item = {
         pos: {
             x: x1,
@@ -544,7 +647,7 @@ function createEnemyModel(x1, y1) {
     elem.style.position = "absolute";
     elem.style.left = (x1 - 15) + "px";
     elem.style.top = (y1 - 15) + "px";
-    elem.style.backgroundImage = "url(./data/enemy.png)";
+    elem.style.backgroundImage = "url(./data/enemies/zombie_full.png)";
     elem.style.backgroundPosition = "center";
     elem.style.backgroundSize = "contain";
     play_area.appendChild(elem);
@@ -632,6 +735,26 @@ function createBulletModel(x, y) {
     return elem;
 }
 
+function drawBlood(x, y, type) {
+    var i = type;
+    if (i != 0) {
+        //small or medium splatter
+        i = (shuffle([1, 2, 2, 2]))[0];
+    }
+    var img = new Image();
+    img.addEventListener('load', function() {
+        const angle = (Math.random() * 360) * Math.PI / 180;
+        play_area_graphics.translate(x, y);
+        play_area_graphics.rotate(angle);
+        play_area_graphics.translate(-x, -y);
+        play_area_graphics.drawImage(img, x, y);
+        play_area_graphics.translate(x, y);
+        play_area_graphics.rotate(-angle);
+        play_area_graphics.translate(-x, -y);
+    }, false);
+    img.src = blood[i][Math.floor(Math.random() * blood[i].length)];
+}
+
 var keys_pressed = [false, false, false, false]; //W A S D
 document.addEventListener('keydown', (event) => {
     switch (event.key) {
@@ -654,6 +777,9 @@ document.addEventListener('keydown', (event) => {
             player.inv_selected = 0;
         }
         displayPlayerWeapon();
+        break;
+    case "p":
+        game_paused = !game_paused;
         break;
     default:
         return;
