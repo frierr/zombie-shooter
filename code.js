@@ -6,9 +6,12 @@ const play_area_canvas = document.getElementById("play-area-graphics");
 const play_area_graphics = play_area_canvas.getContext("2d");
 //graphics arrays
 const blood = [
-    ["./data/blood/big_0.png", "./data/blood/big_1.png", "./data/blood/big_2.png"], //big ~45x45
-    ["./data/blood/med_0.png", "./data/blood/med_1.png", "./data/blood/med_2.png"], //medium ~25x25
-    ["./data/blood/small_0.png", "./data/blood/small_1.png"] // small ~15x15
+    ["./data/blood/big_0.png", "./data/blood/big_1.png", "./data/blood/big_2.png", "./data/blood/big_3.png", "./data/blood/big_4.png", 
+     "./data/blood/big_5.png", "./data/blood/big_6.png", "./data/blood/big_7.png", "./data/blood/big_8.png", "./data/blood/big_9.png"], //big ~45x45
+    ["./data/blood/med_0.png", "./data/blood/med_1.png", "./data/blood/med_2.png", "./data/blood/med_3.png", "./data/blood/med_4.png", 
+     "./data/blood/med_5.png", "./data/blood/med_6.png", "./data/blood/med_7.png", "./data/blood/med_8.png", "./data/blood/med_9.png"], //medium ~25x25
+    ["./data/blood/small_0.png", "./data/blood/small_1.png", "./data/blood/small_2.png", "./data/blood/small_3.png", "./data/blood/small_4.png", 
+     "./data/blood/small_5.png", "./data/blood/small_6.png", "./data/blood/small_7.png", "./data/blood/small_8.png", "./data/blood/small_9.png"] // small ~15x15
 ];
 const player_name = document.getElementById("player-name");
 const player_hp = document.getElementById("player-hp");
