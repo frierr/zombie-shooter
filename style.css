@@ -77,17 +77,27 @@ html, body {
     border-radius: 5px;
 }
 
-.control-box {
-    width: 500px;
-    height: 350px;
-    position: absolute;
-    z-index: 69;
-    top: calc(50% - 125px);
-    left: calc(50% - 250px);
+.title-card {
     background-image: radial-gradient(circle at 50% 50%, rgba(0,255,127,0.4) 0%, rgba(0,255,127,0.2) 25%, transparent 100%);
     background-repeat: no-repeat;
     background-position: center;
     background-size: auto;
+    position: absolute;
+    z-index: 69;
+}
+
+.control-box {
+    width: 500px;
+    height: 350px;
+    top: calc(50% - 125px);
+    left: calc(50% - 250px);
+}
+
+.endgame-box {
+    width: 500px;
+    height: 350px;
+    top: calc(50% - 125px);
+    left: calc(50% - 250px);
 }
 
 .title {

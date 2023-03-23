@@ -27,7 +27,7 @@
     <div class="main" id="play-area">
         <canvas id="play-area-graphics"></canvas>
     </div>
-    <div class="control-box" id="control-box">
+    <div class="title-card control-box" id="control-box">
         <div>
             <span class="title">Welcome to the game!</span><br>
             <span class="subtitle">
@@ -39,10 +39,19 @@
             </span>
         </div>
         <div class="center">
-            <div class="button" onclick="start();" id="actions-start">start</div>
+            <div class="button" id="start-button">start</div>
+        </div>
+    </div>
+    <div class="title-card endgame-box" id="endgame-box">
+        <div>
+            <span class="title" id="endgame-box-title"></span><br>
+            <span class="subtitle" id="endgame-box-body"></span>
+        </div>
+        <div class="center">
+            <div class="button" id="restart-button">restart</div>
         </div>
     </div>
     <div id="player-log"></div>
-    <script src="./code.js"></script>
+    <script type="module" src="./code.js"></script>
 </body>
 </html>
