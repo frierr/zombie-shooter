@@ -26,16 +26,18 @@ export class Player {
     inv;
     inv_selected;
     cooldown;
+    speed;
     constructor() {
         this.pos.x = document.body.getBoundingClientRect().width / 2;
         this.pos.y = document.body.getBoundingClientRect().height / 2;
         this.model = createPlayerModel(this.pos);
         this.personality = new Personality(this.model);
-        this.hp = player_default_hp;
-        this.maxhp = player_default_hp;
+        this.hp = player_default_hp + (this.personality.isMale ? 10 : 0);
+        this.maxhp = player_default_hp + (this.personality.isMale ? 10 : 0);
         this.inv = [["Handgun", player_default_ammo]];
         this.inv_selected = 0;
         this.cooldown = 0;
+        this.speed = move_speed + (this.personality.isMale ? 0 : 2);
     }
     isAlive() {
         return this.hp > 0;
@@ -55,13 +57,13 @@ export class Player {
             //do movement
             if (Xaxis != 0) {
                 if (Yaxis != 0) {
-                    this.pos.x = this.pos.x + Xaxis * move_speed * angled_var;
-                    this.pos.y = this.pos.y + Yaxis * move_speed * angled_var;
+                    this.pos.x = this.pos.x + Xaxis * this.speed * angled_var;
+                    this.pos.y = this.pos.y + Yaxis * this.speed * angled_var;
                 } else {
-                    this.pos.x = this.pos.x + Xaxis * move_speed;
+                    this.pos.x = this.pos.x + Xaxis * this.speed;
                 }
             } else {
-                this.pos.y = this.pos.y + Yaxis * move_speed;
+                this.pos.y = this.pos.y + Yaxis * this.speed;
             }
             //correct position
             if (this.pos.x < 0) {

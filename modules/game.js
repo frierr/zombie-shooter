@@ -76,7 +76,7 @@ export class Game {
             //check enemies collisions
             var damage_count = [];
             for (var j = 0; j < this.projectiles.length; j++) {
-                if (objectsOverlap(this.enemies[i], this.projectiles[j])){
+                if (!this.enemies[i].immune && objectsOverlap(this.enemies[i], this.projectiles[j])){
                     damage_count.push(j);
                     this.statistics.accuracy.hit++;
                 }
@@ -148,7 +148,15 @@ export class Game {
         }
         //do enemy spawn
         for (var i = 0; i < difficulty[diff_stats[1]][0]; i++) {
-            this.enemies.push(spawnNewEnemy());
+            var selector = Math.floor(Math.random() * difficulty[diff_stats[1]][1].length);
+            while (selector != 0 && difficulty[diff_stats[1]][1][selector][1] == 0) {
+                selector++;
+                if (selector >= difficulty[diff_stats[1]][1].length) {
+                    selector = 0;
+                }
+            }
+            this.enemies.push(spawnNewEnemy(difficulty[diff_stats[1]][1][selector][0]));
+            difficulty[diff_stats[1]][1][selector][1]--;
         }
         //do item spawn
         if (diff_stats[4] == difficulty[diff_stats[1]][2]) {
@@ -163,14 +171,20 @@ export class Game {
         }
     }
     #updateDifficultyLevel(timing) {
-        if(timing <= 10) {
-            diff_stats[1] = 0;
-        } else if (timing <= 30) {
-            diff_stats[1] = 1;
-        } else {
-            diff_stats[1] = 2;
+        if(this.#difficultyConditionMet(timing)){
+            diff_stats[1]++;
         }
         return diff_stats[1] != diff_stats[0];
+    }
+    #difficultyConditionMet(timing) {
+        switch(diff_stats[1]) {
+            case 1:
+                return timing > 30;
+            case 2:
+                return false;
+            default:
+                return timing > 10;
+        }
     }
 }
 
@@ -187,9 +201,9 @@ export class Game {
     //          item spawn every 3 seconds (ammo, ammo, ammo, ammo, health)
 const difficulty = [
     //enemies amount, enemy type (ar) {for future compatibility}, item timing, item type (ar), special action
-    [1, [0], 99, ["Ammo"], false],
-    [2, [0], 5, ["Ammo", "Ammo", "Ammo", "Health"], true],
-    [3, [0], 3, ["Ammo", "Ammo", "Ammo", "Ammo", "Health"], false]
+    [1, [[0, 99]], 99, ["Ammo"], false],
+    [2, [[0, 99], [1, 5], [2, 1], [3, 2]], 5, ["Ammo", "Ammo", "Ammo", "Health"], true],
+    [3, [[0, 99], [1, 99], [3, 5]], 3, ["Ammo", "Ammo", "Ammo", "Ammo", "Health"], false]
 ];
 //previous difficulty, current difficulty, special action done, enemy array, item timing, item array
 var diff_stats = [0, 0, false, 0, 0, 0];

@@ -118,20 +118,68 @@ export function createZombieModel(x, y) {
     return elem;
 }
 
+export function createFastZombieModel(x, y) {
+    var elem = document.createElement("div");
+    elem.style.height = "30px";
+    elem.style.width = "30px";
+    elem.style.zIndex = "20";
+    elem.style.position = "absolute";
+    elem.style.left = (x - 15) + "px";
+    elem.style.top = (y - 15) + "px";
+    elem.style.backgroundImage = "url(./data/enemies/fast_zombie_full.png)";
+    elem.style.backgroundPosition = "center";
+    elem.style.backgroundSize = "contain";
+    play_area.appendChild(elem);
+    return elem;
+}
+
+export function createJugZombieModel(x, y) {
+    var elem = document.createElement("div");
+    elem.style.height = "50px";
+    elem.style.width = "50px";
+    elem.style.zIndex = "20";
+    elem.style.position = "absolute";
+    elem.style.left = (x - 25) + "px";
+    elem.style.top = (y - 25) + "px";
+    elem.style.backgroundImage = "url(./data/enemies/jug_zombie_full.png)";
+    elem.style.backgroundPosition = "center";
+    elem.style.backgroundSize = "contain";
+    play_area.appendChild(elem);
+    return elem;
+}
+
+export function createJumperZombieModel(x, y) {
+    var elem = document.createElement("div");
+    elem.style.height = "30px";
+    elem.style.width = "30px";
+    elem.style.zIndex = "20";
+    elem.style.position = "absolute";
+    elem.style.left = (x - 15) + "px";
+    elem.style.top = (y - 15) + "px";
+    elem.style.backgroundImage = "url(./data/enemies/jumper_zombie_full.png)";
+    elem.style.backgroundPosition = "center";
+    elem.style.backgroundSize = "contain";
+    play_area.appendChild(elem);
+    return elem;
+}
+
 const blood = [
     ["./data/blood/big_0.png", "./data/blood/big_1.png", "./data/blood/big_2.png", "./data/blood/big_3.png", "./data/blood/big_4.png", 
      "./data/blood/big_5.png", "./data/blood/big_6.png", "./data/blood/big_7.png", "./data/blood/big_8.png", "./data/blood/big_9.png"], //big ~45x45
     ["./data/blood/med_0.png", "./data/blood/med_1.png", "./data/blood/med_2.png", "./data/blood/med_3.png", "./data/blood/med_4.png", 
      "./data/blood/med_5.png", "./data/blood/med_6.png", "./data/blood/med_7.png", "./data/blood/med_8.png", "./data/blood/med_9.png"], //medium ~25x25
     ["./data/blood/small_0.png", "./data/blood/small_1.png", "./data/blood/small_2.png", "./data/blood/small_3.png", "./data/blood/small_4.png", 
-     "./data/blood/small_5.png", "./data/blood/small_6.png", "./data/blood/small_7.png", "./data/blood/small_8.png", "./data/blood/small_9.png"] // small ~15x15
+     "./data/blood/small_5.png", "./data/blood/small_6.png", "./data/blood/small_7.png", "./data/blood/small_8.png", "./data/blood/small_9.png"], // small ~15x15
+    [3],[4],[5],[6],[7],[8],["./data/blood/lar_0.png"]
 ];
 export function drawBlood(x, y, type) {
     var i = type;
-    if (i != 0) {
+    if (i == 1) {
         //small or medium splatter
         const prob = [1, 2, 2, 2];
         i = prob[Math.floor(Math.random() * prob.length)];
+    } else if (i == 9) {
+        //large splatter
     }
     var img = new Image();
     img.addEventListener('load', function() {
