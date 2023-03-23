@@ -54,9 +54,9 @@ export function updatePlayerAppearance(graphics, isMale, appearance) {
                 hair.addEventListener('load', function() {
                     graphics.drawImage(hair, 0, 0);
                 }, false);
-                hair.src = `../data/char/head/hair/${(isMale ? "m" : "f")}/${appearance[2]}/${appearance[3]}.png`;
+                hair.src = `./data/char/head/hair/${(isMale ? "m" : "f")}/${appearance[2]}/${appearance[3]}.png`;
             }, false);
-            head_base.src = `../data/char/head/head_base.png`;
+            head_base.src = `./data/char/head/head_base.png`;
         }, false);
         var w;
         switch(appearance[0]) {
@@ -69,9 +69,9 @@ export function updatePlayerAppearance(graphics, isMale, appearance) {
                 w = "handgun";
                 break;
         };
-        weapon.src = `../data/char/weapon/${w}.png`;
+        weapon.src = `./data/char/weapon/${w}.png`;
     }, false);
-    body.src = `../data/char/body/${(isMale ? "m" : "f")}/${appearance[1]}.png`;
+    body.src = `./data/char/body/${(isMale ? "m" : "f")}/${appearance[1]}.png`;
 }
 
 export function createBulletModel (x, y) {
