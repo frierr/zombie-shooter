@@ -38,6 +38,22 @@ html, body {
     z-index: 420;
 }
 
+.objective-wrap {
+    color: darkorange;
+    text-shadow: 1px 1px 2px black;
+    width: 100vw;
+    height: 80px;
+    position: absolute;
+    left: 0;
+    top: 50px;
+    display: grid;
+    grid-template-columns: auto 500px auto;
+}
+
+.objective-title {
+    font-size: 0.5em;
+}
+
 .player-stats {
     position: absolute;
     top: 0;

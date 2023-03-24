@@ -8,12 +8,15 @@ const player_wp = document.getElementById("player-weapon");
 const player_name = document.getElementById("player-name");
 const player_kills = document.getElementById("player-kills");
 const player_log = document.getElementById("player-log");
+const objective_wrap = document.getElementById("objective-wrap");
+const objective_desc = document.getElementById("objective-desc");
 
 //display elements for game start
 export function displayPreStartElems() {
     game_start_window.style.display = "block";
     player_stats.style.display = "none";
     game_end_window.style.display = "none";
+    objective_wrap.style.opacity = 0;
 }
 
 //display elements on game start
@@ -89,9 +92,27 @@ export function tickLog() {
     log_opacity = Math.max(0, log_opacity - 0.01);
 }
 
+var obj_opacity = 0;
+var obj_tick = 60;
+export function displayObjective(text) {
+    objective_desc.textContent = text;
+    obj_opacity = 1;
+    obj_tick = 0;
+}
+
+export function tickObjective() {
+    obj_tick++;
+    objective_wrap.style.opacity = obj_opacity;
+    if (obj_tick > 60) {
+        obj_opacity = Math.max(0, obj_opacity - 0.01);
+    }
+}
+
 export function displayEndGameStats(stats, player) {
     log_opacity = 0;
     player_log.style.opacity = log_opacity;
+    obj_opacity = 0;
+    objective_wrap.style.opacity = obj_opacity;
     const date = new Date();
     game_end_window_content[0].innerHTML = `RIP<br>${player.name} ${player.surname}<br>${Math.floor(Math.random() * 27) + 1}.${Math.floor(Math.random() * 11) + 1}.${Math.floor(Math.random() * 30) + 1969} - ${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
     game_end_window_content[1].innerHTML = `Time survived: ${Math.floor(stats.time / 60)} seconds<br>Monsters killed: ${stats.kills}<br>Accuracy: ${stats.getAccuracy()}%`;

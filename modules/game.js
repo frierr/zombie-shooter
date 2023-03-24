@@ -1,7 +1,7 @@
 import { Player } from "./actors/player.js";
 import { Statistics } from "./statistics.js";
 import { sleep } from "./basics.js";
-import { displayPlayerAmmo, tickLog, displayPlayerKills } from "./interface.js";
+import { displayPlayerAmmo, tickLog, displayPlayerKills, displayObjective, tickObjective } from "./interface.js";
 import { spawnNewEnemy } from "./actors/enemies.js";
 import { spawnNewItem } from "./actors/items.js";
 import { objectsOverlap } from "./basics.js";
@@ -15,6 +15,7 @@ export class Game {
     projectiles;
     enemies;
     items;
+    stages;
     constructor() {
         this.player = new Player();
         this.statistics = new Statistics();
@@ -22,6 +23,7 @@ export class Game {
         this.projectiles = [];
         this.enemies = [];
         this.items = [];
+        this.stages = new StageHandler(this.statistics, this.enemies, this.items);
     }
     togglePause() {
         this.isPaused = !this.isPaused;
@@ -31,6 +33,7 @@ export class Game {
     }
     async play() {
         this.isPaused = false;
+        this.stages.start();
         while(this.player.isAlive()){
             if(!this.isPaused) {
                 //do game logic
@@ -39,11 +42,13 @@ export class Game {
                 this.#handleProjectiles();
                 this.#handleEnemies();
                 this.#handleItems();
-                //handle timings of enemy spawns/item spawns/etc depending on difficulty
-                if (this.statistics.time % 60 == 0) {
-                    this.#difficultyTimings(Math.floor(this.statistics.time / 60));
-                }
                 tickLog();
+                tickObjective();
+                this.stages.items = this.items;
+                this.stages.enemies = this.enemies;
+                this.stages.tick();
+                this.items = this.stages.items;
+                this.enemies = this.stages.enemies;
             }
             await sleep(game_tick);
         }
@@ -124,89 +129,7 @@ export class Game {
         }
         this.items = temp_items;
     }
-    #difficultyTimings(timing) {
-        if (this.#updateDifficultyLevel(timing)) {
-            //difficulty changed
-            diff_stats[0] = diff_stats[1];
-            diff_stats[2] = false;
-            diff_stats[3] = 0;
-            diff_stats[4] = 0;
-            diff_stats[5] = 0;
-            //check special action
-            if (difficulty[diff_stats[1]][4]) {
-                //do special action
-                switch (diff_stats[1]) {
-                    case 1:
-                        //medium difficulty - AR spawn
-                        this.items.push(spawnNewItem("AR"));
-                        break;
-                    default:
-                        break;
-                }
-                diff_stats[2] = true;
-            }
-        }
-        //do enemy spawn
-        for (var i = 0; i < difficulty[diff_stats[1]][0]; i++) {
-            var selector = Math.floor(Math.random() * difficulty[diff_stats[1]][1].length);
-            while (selector != 0 && difficulty[diff_stats[1]][1][selector][1] == 0) {
-                selector++;
-                if (selector >= difficulty[diff_stats[1]][1].length) {
-                    selector = 0;
-                }
-            }
-            this.enemies.push(spawnNewEnemy(difficulty[diff_stats[1]][1][selector][0]));
-            difficulty[diff_stats[1]][1][selector][1]--;
-        }
-        //do item spawn
-        if (diff_stats[4] == difficulty[diff_stats[1]][2]) {
-            this.items.push(spawnNewItem(difficulty[diff_stats[1]][3][diff_stats[5]]));
-            diff_stats[5]++;
-            if (diff_stats[5] >= difficulty[diff_stats[1]][3].length) {
-                diff_stats[5] = 0;
-            }
-            diff_stats[4] = 0;
-        } else {
-            diff_stats[4]++;
-        }
-    }
-    #updateDifficultyLevel(timing) {
-        if(this.#difficultyConditionMet(timing)){
-            diff_stats[1]++;
-        }
-        return diff_stats[1] != diff_stats[0];
-    }
-    #difficultyConditionMet(timing) {
-        switch(diff_stats[1]) {
-            case 1:
-                return timing > 30;
-            case 2:
-                return false;
-            default:
-                return timing > 10;
-        }
-    }
 }
-
-    //difficulty levels:
-    //easy 0 - 10 sec:
-    //          1 enemy every second
-    //          no item spawn
-    //medium 11 - 30 sec:
-    //          immediate AR spawn
-    //          2 enemy every second
-    //          item spawn every 5 seconds (ammo, ammo, ammo, health)
-    //hard 31+ sec:
-    //          3 enemies per second
-    //          item spawn every 3 seconds (ammo, ammo, ammo, ammo, health)
-const difficulty = [
-    //enemies amount, enemy type (ar) {for future compatibility}, item timing, item type (ar), special action
-    [1, [[0, 99]], 99, ["Ammo"], false],
-    [2, [[0, 99], [1, 5], [2, 1], [3, 2]], 5, ["Ammo", "Ammo", "Ammo", "Health"], true],
-    [3, [[0, 99], [1, 99], [3, 5]], 3, ["Ammo", "Ammo", "Ammo", "Ammo", "Health"], false]
-];
-//previous difficulty, current difficulty, special action done, enemy array, item timing, item array
-var diff_stats = [0, 0, false, 0, 0, 0];
 
 /*
 CONTROLS
@@ -265,3 +188,173 @@ document.addEventListener('keyup', (event) => {
         return;
     }
 });
+
+class Stage {
+    message;
+    onstart;
+    condition;
+    enemyspawn;
+    itemspawn;
+    starttime;
+    itemtime;
+    constructor(objective, onstart, condition, enemyspawn, itemspawn, starttime) {
+        this.message = objective;
+        this.onstart = onstart;
+        this.condition = condition;
+        this.enemyspawn = enemyspawn;
+        this.itemspawn = itemspawn;
+        this.starttime = starttime;
+        this.itemtime = 0;
+    }
+    start(stats, enemies, items) {
+        displayObjective(this.message);
+        if(this.onstart) {
+            this.onstart(stats, enemies, items);
+        }
+    }
+    handleEnemies(time, enemies) {
+        if (time % (60 / this.enemyspawn.persecond) == 0 && this.enemyspawn.amount < this.enemyspawn.maxamount) {
+            //spawn an enemy
+            var i = Math.floor(Math.random() * this.enemyspawn.types.length);
+            while (i != 0 && this.enemyspawn.types[i][1] == 0) {
+                i++;
+                if (i >= this.enemyspawn.types.length) {
+                    i = 0;
+                }
+            }
+            enemies.push(spawnNewEnemy(this.enemyspawn.types[i][0]));
+            this.enemyspawn.types[i][1]--;
+            this.enemyspawn.amount++;
+        }
+    }
+    handleItems(time, items) {
+        if(time % 60 == 0) {
+            this.itemtime++;
+            if (this.itemtime == this.itemspawn.seconds && this.itemspawn.amount < this.itemspawn.maxamount) {
+                this.itemtime = 0;
+                console.log("item spawn");
+                //spawn item
+                var i = Math.floor(Math.random() * this.itemspawn.types.length);
+                while (i != 0 && this.itemspawn.types[i][1] == 0) {
+                    i++;
+                    if (i >= this.itemspawn.types.length) {
+                        i = 0;
+                    }
+                }
+                items.push(spawnNewItem(this.itemspawn.types[i][0]));
+                this.itemspawn.types[i][1]--;
+                this.itemspawn.amount++;
+            }
+        }
+    }
+}
+
+class StageHandler {
+    stages = [];
+    current;
+    stats;
+    enemies;
+    items;
+    constructor(stats, enemies, items) {
+        this.current = 0;
+        this.stats = stats;
+        this.enemies = enemies;
+        this.items = items;
+        /* STAGE 1 */
+        this.stages.push(new Stage("Wave 1", undefined, function(stats, enemies, items) {
+            return enemies.length < 1 && stats.kills > 4;
+        }, {
+            types: [[0, 99]],
+            amount: 0,
+            maxamount: 10,
+            persecond: 1
+        }, {
+            amount: 0,
+            maxamount: -1,
+            seconds: 99
+        }, this.stats.time));
+        /* STAGE 2 */
+        this.stages.push(new Stage("Grab AR", function(stats, enemies, items) {
+            items.push(spawnNewItem("AR"));
+        }, function(stats, enemies, items) {
+            return items.length < 1;
+        }, {
+            amount: 0,
+            maxamount: -1,
+            persecond: 1
+        }, {
+            amount: 0,
+            maxamount: -1,
+            seconds: 99
+        }, this.stats.time));
+        /* STAGE 3 */
+        this.stages.push(new Stage("Wave 2", undefined, function(stats, enemies, items) {
+            return enemies.length < 1 && this.enemyspawn.amount == this.enemyspawn.maxamount;
+        }, {
+            types: [[0, 99], [1, 10]],
+            amount: 0,
+            maxamount: 50,
+            persecond: 2
+        }, {
+            types: [["Ammo", 99], ["Health", 2]],
+            amount: 0,
+            maxamount: 10,
+            seconds: 5
+        }, this.stats.time));
+        /* STAGE 4 */
+        this.stages.push(new Stage("Prepare", undefined, function(stats, enemies, items) {
+            return items.length < 1 && this.itemspawn.amount == this.itemspawn.maxamount;
+        }, {
+            amount: 0,
+            maxamount: -1,
+            persecond: 1
+        }, {
+            types: [["Ammo", 99], ["Health", 1]],
+            amount: 0,
+            maxamount: 5,
+            seconds: 1
+        }, this.stats.time));
+        /* STAGE 5 */
+        this.stages.push(new Stage("Boss of the gym", function(stats, enemies, items) {
+            enemies.push(spawnNewEnemy(2));
+        }, function(stats, enemies, items) {
+            return enemies.length < 1 && this.enemyspawn.amount == this.enemyspawn.maxamount;
+        }, {
+            types: [[0, 99], [1, 5], [3, 2]],
+            amount: 0,
+            maxamount: 20,
+            persecond: 2
+        }, {
+            types: [["Ammo", 99], ["Health", 2]],
+            amount: 0,
+            maxamount: 10,
+            seconds: 5
+        }, this.stats.time));
+        /* STAGE 6 (INFINITE WAVE - TEMPORARY) */
+        this.stages.push(new Stage("SURVIVE", undefined, function(stats, enemies, items) {
+            return false;
+        }, {
+            types: [[0, 99], [1, 99], [2, 5], [3, 40]],
+            amount: 0,
+            maxamount: 99999,
+            persecond: 3
+        }, {
+            types: [["Ammo", 99], ["Health", 99]],
+            amount: 0,
+            maxamount: 99999,
+            seconds: 5
+        }, this.stats.time));
+    }
+    start() {
+        this.stages[this.current].start(this.stats, this.enemies, this.items);
+    }
+    tick() {
+        if (this.stages[this.current].condition(this.stats, this.enemies, this.items)) {
+            this.current++;
+            this.start();
+        } else {
+            this.stages[this.current].handleEnemies(this.stats.time, this.enemies);
+            this.stages[this.current].handleItems(this.stats.time, this.items);
+        }
+    }
+}
