@@ -1,5 +1,5 @@
 import { createZombieModel, createFastZombieModel, createJugZombieModel, createJumperZombieModel, drawBlood } from "../graphics.js";
-import { objectsOverlapPlayer } from "../basics.js";
+import { objectsOverlapPlayer, objectsOverlapOther } from "../basics.js";
 
 const zombie_default_hp = 50;
 const zombie_damaged_hp = 15;
@@ -8,6 +8,7 @@ const zombie_damage = 10;
 const zombie_damage_rate = 60;
 const jumper_recover_ticks = 60 * 3;
 const jumper_airtime = 60 * 1.5;
+const stunned_time = 60;
 
 class Zombie {
     pos = {
@@ -20,6 +21,7 @@ class Zombie {
     damage_rate;
     model;
     immune = false;
+    stunned = stunned_time;
     constructor(x, y) {
         this.pos.x = x;
         this.pos.y = y;
@@ -27,24 +29,36 @@ class Zombie {
         this.damage_rate = zombie_damage_rate;
     }
     move(player) {
-        //get dx/dy - to player location
+        if (this.stunned >= stunned_time) {
+            var d = this.#getAngleToTarget(player);
+            this.pos.x += d[0] * this.speed;
+            this.pos.y += d[1] * this.speed;
+            this.#updateModelToCurrentLocation();
+            this.look(player);
+        }
+        this.fixDamageRate();
+    }
+    #updateModelToCurrentLocation() {
+        this.model.style.left = (this.pos.x - 15) + "px";
+        this.model.style.top = (this.pos.y - 15) + "px";
+    }
+    #getAngleToTarget(object) {
+        //get dx/dy - to target
         //calculate angle - dx and dy
-        var dx = this.pos.x - player.pos.x;
-        var dy = this.pos.y - player.pos.y;
+        var dx = this.pos.x - object.pos.x;
+        var dy = this.pos.y - object.pos.y;
         //normalise
         const sum = Math.abs(dx) + Math.abs(dy);
         dx = (-1) * dx / sum;
         dy = (-1) * dy / sum;
-        this.pos.x += dx * this.speed;
-        this.pos.y += dy * this.speed;
-        this.model.style.left = (this.pos.x - 15) + "px";
-        this.model.style.top = (this.pos.y - 15) + "px";
-        this.fixDamageRate();
-        this.look(player);
+        return [dx, dy];
     }
     fixDamageRate() {
         if (this.damage_rate < zombie_damage_rate) {
             this.damage_rate++;
+        }
+        if (this.stunned < stunned_time) {
+            this.stunned++;
         }
     }
     look(player) {
@@ -59,6 +73,18 @@ class Zombie {
             this.damage_rate = 0;
             player.takeDamage(this.damage);
         }
+    }
+    playerMeleeCollision(player) {
+        if (objectsOverlapOther(this, player, -player.melee)) {
+            this.pushAwayFrom(player, player.melee);
+            this.stunned = 0;
+        }
+    }
+    pushAwayFrom(object, distance) {
+        var d = this.#getAngleToTarget(object);
+        this.pos.x += d[0] * -distance;
+        this.pos.y += d[1] * -distance;
+        this.#updateModelToCurrentLocation();
     }
     receiveDamage(damage) {
         this.hp -= damage;
