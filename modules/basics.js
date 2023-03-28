@@ -10,6 +10,10 @@ export function objectsOverlapPlayer(object1, object2) {
     return objectsOverlapGeneric(object1, object2, 10);
 }
 
+export function objectsOverlapOther(object1, object2, value) {
+    return objectsOverlapGeneric(object1, object2, value);
+}
+
 function objectsOverlapGeneric(object1, object2, correction) {
     const rec1 = object1.model.getBoundingClientRect();
     const rec2 = object2.model.getBoundingClientRect();

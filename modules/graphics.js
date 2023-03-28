@@ -14,6 +14,15 @@ export function clearCanvas() {
     play_area_graphics.clearRect(0, 0, play_area_canvas.width, play_area_canvas.height);
 }
 
+export function generateBackground() {
+    play_area.style.backgroundColor = "rgba(49, 120, 59, 1)";
+    var bg = "radial-gradient(circle at " + Math.random() * 100 + "% " + Math.random() * 100 + "%, rgba(0,160,120,1) 0%, rgba(0,160,120,1) 10%, rgba(0,0,0,0) 50%),";
+    bg += "radial-gradient(circle at " + Math.random() * 100 + "% " + Math.random() * 100 + "%, rgba(0,150,100,1) 0%, rgba(0,150,100,1) 10%, rgba(0,0,0,0) 50%),";
+    bg += "radial-gradient(circle at " + Math.random() * 100 + "% " + Math.random() * 100 + "%, rgba(0,180,80,1) 0%, rgba(0,180,80,1) 10%, rgba(0,0,0,0) 50%),";
+    bg += "radial-gradient(circle at " + Math.random() * 100 + "% " + Math.random() * 100 + "%, rgba(0,160,120,1) 0%, rgba(0,160,120,1) 10%, rgba(0,0,0,0) 50%)";
+    play_area.style.backgroundImage = bg;
+}
+
 export function createPlayerModel(position) {
     const elem = document.createElement("div");
     elem.style.height = "30px";
@@ -64,6 +73,16 @@ export function updatePlayerAppearance(graphics, isMale, appearance) {
                 //ar
                 w = "ar";
                 break;
+            case 2:
+                //rifle
+                w = "rifle";
+                break;
+            case 3:
+                w = "shotgun";
+                break;
+            case 4:
+                w = "bazooka";
+                break;
             default:
                 //handgun
                 w = "handgun";
@@ -74,7 +93,7 @@ export function updatePlayerAppearance(graphics, isMale, appearance) {
     body.src = "./data/char/body/" + (isMale ? "m" : "f") + "/" + appearance[1] + ".png";
 }
 
-export function createBulletModel (x, y) {
+export function createBulletModel(x, y) {
     var elem = document.createElement("div");
     elem.style.height = "4px";
     elem.style.width = "4px";
@@ -84,6 +103,34 @@ export function createBulletModel (x, y) {
     elem.style.left = (x - 2) + "px";
     elem.style.top = (y - 2) + "px";
     elem.style.backgroundColor = "black";
+    play_area.appendChild(elem);
+    return elem;
+}
+
+export function createRocketModel(x, y) {
+    var elem = document.createElement("div");
+    elem.style.height = "4px";
+    elem.style.width = "10px";
+    elem.style.borderRadius = "2px";
+    elem.style.zIndex = "25";
+    elem.style.position = "absolute";
+    elem.style.left = (x - 5) + "px";
+    elem.style.top = (y - 2) + "px";
+    elem.style.backgroundColor = "black";
+    play_area.appendChild(elem);
+    return elem;
+}
+
+export function createExplosionModel(x, y) {
+    var elem = document.createElement("div");
+    elem.style.height = "100px";
+    elem.style.width = "100px";
+    elem.style.borderRadius = "50px";
+    elem.style.zIndex = "25";
+    elem.style.position = "absolute";
+    elem.style.left = (x - 50) + "px";
+    elem.style.top = (y - 50) + "px";
+    elem.style.backgroundColor = "red";
     play_area.appendChild(elem);
     return elem;
 }
@@ -193,4 +240,19 @@ export function drawBlood(x, y, type) {
         play_area_graphics.translate(-x, -y);
     }, false);
     img.src = blood[i][Math.floor(Math.random() * blood[i].length)];
+}
+
+export function drawExplosion(x, y) {
+    var img = new Image();
+    img.addEventListener('load', function() {
+        const angle = (Math.random() * 360) * Math.PI / 180;
+        play_area_graphics.translate(x, y);
+        play_area_graphics.rotate(angle);
+        play_area_graphics.translate(-x, -y);
+        play_area_graphics.drawImage(img, x, y);
+        play_area_graphics.translate(x, y);
+        play_area_graphics.rotate(-angle);
+        play_area_graphics.translate(-x, -y);
+    }, false);
+    img.src = "./data/effects/explosion.png";
 }

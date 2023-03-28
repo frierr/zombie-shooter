@@ -1,5 +1,5 @@
 import { createPlayerModel, createPlayerGraphics, updatePlayerAppearance } from "../graphics.js";
-import { fireProjectile } from "./projectiles.js";
+import { fireBulletSpread, fireProjectile, fireRocket } from "./projectiles.js";
 import { displayPlayerWeapon, displayPlayerAmmo, displayPlayerHP, displayLog } from "../interface.js";
 
 const player_default_hp = 100;
@@ -13,6 +13,20 @@ const ar_fire_rate = 60 / 10; //ar bpm
 const ar_bullet_speed = 40;
 const ar_bullet_damage = 10;
 const item_health_value = 30;
+const melee_cooldown = 60 * 3;
+const melee_radius = 20;
+const rifle_fire_rate = 60 * 1.5;
+const rifle_bullet_speed = 60;
+const rifle_bullet_damage = 60;
+const rifle_bullet_penetration = 3;
+const shotgun_fire_rate = 60 / 2;
+const shotgun_bullet_speed = 20;
+const shotgun_bullet_damage = 5;
+const shotgun_bullet_spread = 15;
+const rocket_fire_rate = 60 * 5;
+const rocket_speed = 30;
+const rocket_damage = 500;
+const rocket_ttl = 30;
 
 export class Player {
     pos = {
@@ -27,6 +41,8 @@ export class Player {
     inv_selected;
     cooldown;
     speed;
+    melee_cd;
+    melee;
     constructor() {
         this.pos.x = document.body.getBoundingClientRect().width / 2;
         this.pos.y = document.body.getBoundingClientRect().height / 2;
@@ -38,6 +54,8 @@ export class Player {
         this.inv_selected = 0;
         this.cooldown = 0;
         this.speed = move_speed + (this.personality.isMale ? 0 : 2);
+        this.melee_cd = 0;
+        this.melee = 0;
     }
     isAlive() {
         return this.hp > 0;
@@ -86,11 +104,22 @@ export class Player {
     tickCooldown() {
         this.cooldown--;
         this.cooldown = Math.max(0, this.cooldown);
+        this.melee_cd--;
+        this.melee_cd = Math.max(0, this.melee_cd);
+        if(this.melee_cd == melee_cooldown - 5) {
+            this.melee = 0;
+        }
     }
     attack(mouseX, mouseY) {
         switch (this.inv[this.inv_selected][0]) {
             case "AR":
                 return this.#spawnARProjectiles(mouseX, mouseY);
+            case "Rifle":
+                return this.#spawnRifleProjectiles(mouseX, mouseY);
+            case "Shotgun":
+                return this.#spawnShotgunProjectiles(mouseX, mouseY);
+            case "Bazooka":
+                return this.#spawnRocketProjectiles(mouseX, mouseY);
             default:
                 return this.#spawnGunProjectiles(mouseX, mouseY);
         }
@@ -98,12 +127,27 @@ export class Player {
     #spawnGunProjectiles(mouseX, mouseY) {
         this.inv[this.inv_selected][1]--;
         this.cooldown = gun_fire_rate;
-        return fireProjectile(this.pos.x, this.pos.y, mouseX, mouseY, gun_bullet_speed, gun_bullet_damage);
+        return fireProjectile(this.pos.x, this.pos.y, mouseX, mouseY, gun_bullet_speed, gun_bullet_damage, 0);
     }
     #spawnARProjectiles(mouseX, mouseY) {
         this.inv[this.inv_selected][1]--;
         this.cooldown = ar_fire_rate;
-        return fireProjectile(this.pos.x, this.pos.y, mouseX, mouseY, ar_bullet_speed, ar_bullet_damage);
+        return fireProjectile(this.pos.x, this.pos.y, mouseX, mouseY, ar_bullet_speed, ar_bullet_damage, 0);
+    }
+    #spawnRifleProjectiles(mouseX, mouseY) {
+        this.inv[this.inv_selected][1]--;
+        this.cooldown = rifle_fire_rate;
+        return fireProjectile(this.pos.x, this.pos.y, mouseX, mouseY, rifle_bullet_speed, rifle_bullet_damage, rifle_bullet_penetration);
+    }
+    #spawnShotgunProjectiles(mouseX, mouseY) {
+        this.inv[this.inv_selected][1]--;
+        this.cooldown = shotgun_fire_rate;
+        return fireBulletSpread(this.pos.x, this.pos.y, mouseX, mouseY, shotgun_bullet_speed, shotgun_bullet_damage, shotgun_bullet_spread);
+    }
+    #spawnRocketProjectiles(mouseX, mouseY) {
+        this.inv[this.inv_selected][1]--;
+        this.cooldown = rocket_fire_rate;
+        return fireRocket(this.pos.x, this.pos.y, mouseX, mouseY, rocket_speed, rocket_damage, rocket_ttl);
     }
     receiveItem(item_received) {
         switch(item_received) {
@@ -115,6 +159,30 @@ export class Player {
                 displayPlayerWeapon(this.inv[this.inv_selected]);
                 displayLog("AR!", this.pos);
                 break;
+            case "Rifle":
+                this.inv.push(["Rifle", 15]);
+                this.inv_selected++;
+                this.personality.appearance[0] = this.inv_selected;
+                this.personality.updateAppearance();
+                displayPlayerWeapon(this.inv[this.inv_selected]);
+                displayLog("Rifle!", this.pos);
+                break;
+            case "Shotgun":
+                this.inv.push(["Shotgun", 15]);
+                this.inv_selected++;
+                this.personality.appearance[0] = this.inv_selected;
+                this.personality.updateAppearance();
+                displayPlayerWeapon(this.inv[this.inv_selected]);
+                displayLog("Shotgun!", this.pos);
+                break;
+            case "Bazooka":
+                this.inv.push(["Bazooka", 1]);
+                this.inv_selected++;
+                this.personality.appearance[0] = this.inv_selected;
+                this.personality.updateAppearance();
+                displayPlayerWeapon(this.inv[this.inv_selected]);
+                displayLog("Bazooka!", this.pos);
+                break;
             case "Ammo":
                 switch (this.inv[this.inv_selected][0]) {
                     case "Handgun":
@@ -122,6 +190,15 @@ export class Player {
                         break;
                     case "AR":
                         this.inv[this.inv_selected][1] += 50;
+                        break;
+                    case "Rifle":
+                        this.inv[this.inv_selected][1] += 10;
+                        break;
+                    case "Shotgun":
+                        this.inv[this.inv_selected][1] += 10;
+                        break;
+                    case "Bazooka":
+                        this.inv[this.inv_selected][1] += 1;
                         break;
                     default:
                         break;
@@ -151,9 +228,16 @@ export class Player {
         if (this.inv_selected >= this.inv.length) {
             this.inv_selected = 0;
         }
+        this.cooldown = 0;
         this.personality.appearance[0] = this.inv_selected;
         this.personality.updateAppearance();
         displayPlayerWeapon(this.inv[this.inv_selected]);
+    }
+    meleeAttack() {
+        if(this.melee_cd <= 0) {
+            this.melee = melee_radius;
+            this.melee_cd = melee_cooldown;
+        }
     }
 }
 

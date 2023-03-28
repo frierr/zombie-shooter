@@ -95,9 +95,11 @@ export function tickLog() {
 var obj_opacity = 0;
 var obj_tick = 60;
 export function displayObjective(text) {
-    objective_desc.textContent = text;
-    obj_opacity = 1;
-    obj_tick = 0;
+    if (text != "") {
+        objective_desc.textContent = text;
+        obj_opacity = 1;
+        obj_tick = 0;
+    }
 }
 
 export function tickObjective() {

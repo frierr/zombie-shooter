@@ -5,6 +5,7 @@ import { displayPlayerAmmo, tickLog, displayPlayerKills, displayObjective, tickO
 import { spawnNewEnemy } from "./actors/enemies.js";
 import { spawnNewItem } from "./actors/items.js";
 import { objectsOverlap } from "./basics.js";
+import { generateBackground } from "./graphics.js";
 
 const game_tick = 1000 / 60; //game logic updates at 60fps
 
@@ -31,8 +32,12 @@ export class Game {
     changePlayerWeapon() {
         this.player.changeWeapon();
     }
+    playerMelee() {
+        this.player.meleeAttack();
+    }
     async play() {
         this.isPaused = false;
+        generateBackground();
         this.stages.start();
         while(this.player.isAlive()){
             if(!this.isPaused) {
@@ -60,7 +65,7 @@ export class Game {
     }
     #handleProjectiles() {
         if(mouse_down && this.player.cooldown == 0 && this.player.inv[this.player.inv_selected][1] > 0) {
-            this.projectiles.push(this.player.attack(mouseX, mouseY));
+            this.projectiles.push(...this.player.attack(mouseX, mouseY));
             displayPlayerAmmo(this.player.inv[this.player.inv_selected][1]);
             this.statistics.accuracy.fired++;
         }
@@ -68,6 +73,14 @@ export class Game {
         for (var i = 0; i < this.projectiles.length; i++) {
             if(this.projectiles[i].checkBounds()) {
                 this.projectiles[i].move();
+                if(this.projectiles[i].explode) {
+                    //rocket projectile
+                    for (var j = 0; j < this.enemies.length; j++) {
+                        if (objectsOverlap(this.enemies[j], this.projectiles[i]) && !this.projectiles[i].exploded) {
+                            this.projectiles[i].explode();
+                        }
+                    }
+                }
                 temp_proj.push(this.projectiles[i]);
             } else {
                 this.projectiles[i].model.remove();
@@ -100,7 +113,12 @@ export class Game {
                         if (damage_count[k] != j) {
                             temp.push(this.projectiles[j]);
                         } else {
-                            this.projectiles[j].model.remove();
+                            this.projectiles[j].ttl--;
+                            if(this.projectiles[j].ttl > 0) {
+                                temp.push(this.projectiles[j]);
+                            } else {
+                                this.projectiles[j].model.remove();
+                            }
                         }
                     }
                 }
@@ -108,6 +126,9 @@ export class Game {
             }
             if (this.enemies[i].isAlive()) {
                 //check player collision
+                if(this.player.melee > 0) {
+                    this.enemies[i].playerMeleeCollision(this.player);
+                }
                 this.enemies[i].playerCollision(this.player);
                 this.enemies[i].move(this.player);
                 temp_enemies.push(this.enemies[i]);
@@ -232,7 +253,6 @@ class Stage {
             this.itemtime++;
             if (this.itemtime == this.itemspawn.seconds && this.itemspawn.amount < this.itemspawn.maxamount) {
                 this.itemtime = 0;
-                console.log("item spawn");
                 //spawn item
                 var i = Math.floor(Math.random() * this.itemspawn.types.length);
                 while (i != 0 && this.itemspawn.types[i][1] == 0) {
@@ -293,7 +313,7 @@ class StageHandler {
         }, {
             types: [[0, 99], [1, 10]],
             amount: 0,
-            maxamount: 50,
+            maxamount: 40,
             persecond: 2
         }, {
             types: [["Ammo", 99], ["Health", 2]],
@@ -302,16 +322,22 @@ class StageHandler {
             seconds: 5
         }, this.stats.time));
         /* STAGE 4 */
-        this.stages.push(new Stage("Prepare", undefined, function(stats, enemies, items) {
-            return items.length < 1 && this.itemspawn.amount == this.itemspawn.maxamount;
+        this.stages.push(new Stage("Prepare", function(stats, enemies, items) {
+            items.push(spawnNewItem("Rifle"));
+            items.push(spawnNewItem("Ammo"));
+            items.push(spawnNewItem("Ammo"));
+            items.push(spawnNewItem("Ammo"));
+            items.push(spawnNewItem("Health"));
+            items.push(spawnNewItem("Health"));
+        }, function(stats, enemies, items) {
+            return items.length < 1;
         }, {
             amount: 0,
             maxamount: -1,
             persecond: 1
         }, {
-            types: [["Ammo", 99], ["Health", 1]],
             amount: 0,
-            maxamount: 5,
+            maxamount: -1,
             seconds: 1
         }, this.stats.time));
         /* STAGE 5 */
@@ -330,7 +356,62 @@ class StageHandler {
             maxamount: 10,
             seconds: 5
         }, this.stats.time));
-        /* STAGE 6 (INFINITE WAVE - TEMPORARY) */
+        /* STAGE 6 */
+        this.stages.push(new Stage("Prepare (Again)", function(stats, enemies, items) {
+            items.push(spawnNewItem("Shotgun"));
+            items.push(spawnNewItem("Ammo"));
+            items.push(spawnNewItem("Ammo"));
+            items.push(spawnNewItem("Ammo"));
+            items.push(spawnNewItem("Health"));
+            items.push(spawnNewItem("Health"));
+        }, function(stats, enemies, items) {
+            return items.length < 1;
+        }, {
+            amount: 0,
+            maxamount: -1,
+            persecond: 1
+        }, {
+            amount: 0,
+            maxamount: -1,
+            seconds: 1
+        }, this.stats.time));
+        /* STAGE 7 */
+        this.stages.push(new Stage("2 Boss 2 Furious", function(stats, enemies, items) {
+            enemies.push(spawnNewEnemy(2));
+            enemies.push(spawnNewEnemy(2));
+        }, function(stats, enemies, items) {
+            return enemies.length < 1 && this.enemyspawn.amount == this.enemyspawn.maxamount;
+        }, {
+            types: [[0, 99], [1, 10]],
+            amount: 0,
+            maxamount: 30,
+            persecond: 2
+        }, {
+            types: [["Ammo", 99], ["Health", 2]],
+            amount: 0,
+            maxamount: 10,
+            seconds: 5
+        }, this.stats.time));
+        /* STAGE 8 */
+        this.stages.push(new Stage("Prepare (For the last time)", function(stats, enemies, items) {
+            items.push(spawnNewItem("Bazooka"));
+            items.push(spawnNewItem("Ammo"));
+            items.push(spawnNewItem("Ammo"));
+            items.push(spawnNewItem("Ammo"));
+            items.push(spawnNewItem("Health"));
+            items.push(spawnNewItem("Health"));
+        }, function(stats, enemies, items) {
+            return items.length < 1;
+        }, {
+            amount: 0,
+            maxamount: -1,
+            persecond: 1
+        }, {
+            amount: 0,
+            maxamount: -1,
+            seconds: 1
+        }, this.stats.time));
+        /* STAGE - (INFINITE WAVE - TEMPORARY) */
         this.stages.push(new Stage("SURVIVE", undefined, function(stats, enemies, items) {
             return false;
         }, {

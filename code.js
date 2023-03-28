@@ -56,6 +56,11 @@ document.addEventListener('keydown', (event) => {
             game.togglePause();
         }
         break;
+    case "KeyF":
+        if(game) {
+            game.playerMelee();
+        }
+        break;
     default:
         return;
     }
